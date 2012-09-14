@@ -4,15 +4,42 @@
 from flask import Flask, redirect, render_template, send_file, url_for, request, flash
 from werkzeug import secure_filename
 from beefish import decrypt, encrypt
-from models import File
 import boto
 from StringIO import StringIO
+from peewee import *
+import mimetypes
+import datetime
 
+DEBUG = True
+SECRET_KEY = "kas45hdas67dhkasd8aksd78ad7"
+DATABASE = 'db.db'
+
+AWSID = '<your AWS key id>'
+AWSKEY = '<your AWS key secret>'
+AWSBUCKET = '<your bucket name>'
+
+app = Flask(__name__)
+app.config.from_object(__name__)
+database = SqliteDatabase(DATABASE)
+
+class File(Model):
+    class Meta:
+        database = database
+        
+    filename = CharField()
+    created_date = DateTimeField(default=datetime.datetime.now)
+    encrypted = BooleanField(default=False)
+
+    def get_mimetype(self):
+        return mimetypes.guess_type(self.filename)[0]
 
 def get_bucket(access_key_id, secret_access_key, bucket_name):
     conn = boto.connect_s3(access_key_id, secret_access_key)
     return conn.get_bucket(bucket_name)
 
+def create_tables():
+    database.connect()
+    File.create_table()
 
 def upload_handler(instance, file_obj):
     bucket = get_bucket(app.config['AWSID'], app.config['AWSKEY'], app.config['AWSBUCKET'])
@@ -34,15 +61,6 @@ def upload_handler(instance, file_obj):
     file_obj.seek(0)
     key.set_contents_from_file(file_obj)
 
-DEBUG = True
-SECRET_KEY = "kas45hdas67dhkasd8aksd78ad7"
-
-AWSID = '<your AWS key id>'
-AWSKEY = '<your AWS key secret>'
-AWSBUCKET = '<your bucket name>'
-
-app = Flask(__name__)
-app.config.from_object(__name__)
 
 @app.route('/')
 def index():

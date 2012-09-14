@@ -9,6 +9,11 @@ You will need to provide the following in app.py in order to be able to use S3.
     AWSKEY = '<your AWS key secret>'
     AWSBUCKET = '<your bucket name>'
 
+For first time run you can create the database by starting a python shell at the directory where app.py is and issuing the commands:
+
+    >>> from app import create_tables
+    >>> create_tables()
+
 I have made a few corrections from the article. I also don't make the files public and use boto to download them. Added also the [bootstrap](http://twitter.github.com/bootstrap/index.html) css and javascript.
 
 Have fun!
