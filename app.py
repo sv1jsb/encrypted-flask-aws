@@ -120,9 +120,9 @@ def download(file_id):
             as_attachment=True,
             attachment_filename=file.filename,
         )
-
-    # display a password form
-    return render_template('download.html', file=file)
+    else:
+        flash("You must provide a password")
+        return redirect(url_for('index'))
 
 @app.route('/delete/<int:file_id>/')
 def delete(file_id):

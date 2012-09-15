@@ -9,10 +9,10 @@
         <form method="post" action="/add/" enctype="multipart/form-data">
             <fieldset>
                 <label>Choose a file</label>
-                <input type="file" name="file">
+                <input type="file" name="file" />
                 <br />
                 <label>Password</label>
-                <input type="password" name="password">
+                <input type="password" name="password" />
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Upload</button>
                     <a href="javascript:void(0);" class="btn" data-dismiss="modal">Cancel</a>
@@ -29,7 +29,7 @@
 <thead><th>Name</th><th>Encrypted</th><th>Actions</th></thead>
 <tbody>
 {% for file in files %}
-<tr><td><a href="/download/{{file.id}}/">{{file.filename}}</a></td><td>{{file.encrypted}}</td><td><a href="/delete/{{file.id}}/" onclick="return confirm('Are you sure?')">Delete</a></td></tr>
+<tr><td><a href="/download/{{file.id}}/" onclick="return downloadFile(this,'{{file.id}}');">{{file.filename}}</a></td><td id="encrypted">{{file.encrypted}}</td><td><a href="/delete/{{file.id}}/" onclick="return confirm('Are you sure?')">Delete</a></td></tr>
 {% endfor %}
 </tbody>
 </table>
@@ -38,6 +38,26 @@
 <script type="text/javascript">
 function showAddFile(){
     $("#AddFile").modal("show");
+}
+function downloadFile(obj, file_id) {
+    if($(obj).parents("tr").children("#encrypted").html() == "False"){
+        return true;
+    } else {
+        $(obj).parents('tr').after('<tr id="passwordtr"><td colspan=3><form method="post" action="/download/'+file_id+'/" class="form-inline" name="passwordform">Password: <input type="password" name="password" /> <button class="btn btn-primary" onclick="return submitpassform(this);">Download</button> <button class="btn" onclick="deletepasstr();">Cancel</button></form></td></tr>');
+        return false;
+    }
+}
+function deletepasstr(){
+    $("#passwordtr").remove();
+    return false;
+}
+function submitpassform(obj){
+    if (document.forms['passwordform']['password'].value == null || document.forms['passwordform']['password'].value == "") {
+        alert('No password given'); 
+        return false;
+    }
+    setTimeout(function(){$("#passwordtr").remove()},100);
+    return true;
 }
 </script>
 {% endblock %}
