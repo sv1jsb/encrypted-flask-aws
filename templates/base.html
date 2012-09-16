@@ -44,6 +44,9 @@
           </a>
           <a class="brand" href="/">AWS Encrypted Files</a>
           <div class="nav-collapse">
+            <form class="navbar-search pull-right" method="get" action="/search/">
+                <input type="text" name="q" class="search-query" placeholder="Search">
+            </form>
           </div><!--/.nav-collapse -->
         </div>
       </div>
@@ -51,16 +54,6 @@
     </div>
 
     <div class="container">
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <div class="alert alert-error">
-            <button type="button" class="close" data-dismiss="alert">×</button>
-            {% for message in messages %}
-              <strong>Error!</strong> {{ message }}
-            {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
         {% block content %}
         {% endblock %}
 

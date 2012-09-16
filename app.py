@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
-from flask import Flask, redirect, render_template, send_file, url_for, request, flash
+from flask import Flask, redirect, render_template, send_file, url_for, request, flash, session, abort
 from werkzeug import secure_filename
 from beefish import decrypt, encrypt
 import boto
@@ -9,6 +9,7 @@ from StringIO import StringIO
 from peewee import *
 import mimetypes
 import datetime
+import os.path
 
 DEBUG = True
 SECRET_KEY = "kas45hdas67dhkasd8aksd78ad7"
@@ -29,7 +30,9 @@ class File(Model):
     filename = CharField()
     created_date = DateTimeField(default=datetime.datetime.now)
     encrypted = BooleanField(default=False)
-
+    folder = BooleanField(default=False)
+    parent = CharField(null=True)
+    
     def get_mimetype(self):
         return mimetypes.guess_type(self.filename)[0]
 
@@ -43,7 +46,7 @@ def create_tables():
 
 def upload_handler(instance, file_obj):
     bucket = get_bucket(app.config['AWSID'], app.config['AWSKEY'], app.config['AWSBUCKET'])
-    key = bucket.new_key(instance.filename)
+    key = bucket.new_key(os.path.join(instance.parent,instance.filename))
     if instance.get_mimetype():
         key.set_metadata('Content-Type', instance.get_mimetype())
 
@@ -64,13 +67,28 @@ def upload_handler(instance, file_obj):
 
 @app.route('/')
 def index():
-    return render_template('index.html', files=File.select().order_by('filename'))
+    if request.args.get('folder',None):
+        folder = request.args.get('folder')
+        session['folder'] = os.path.join('/',folder)
+    else:
+        session['folder'] = '/'
+    files = File.filter(parent=session['folder']).order_by((File,'folder','DESC'),(File,'filename'))
+    if session['folder'].endswith('/'):
+        path=session['folder']
+    else:
+        path=session['folder']+'/'
+    tmp = path[:-1].split('/')
+    breads = []
+    for i in range(1,len(tmp)+1):
+        breads.append({'url':'/'.join(tmp[0:i]),'name':tmp[i-1]})
+    breads[0]={'url':'/','name':'Home'}
+    return render_template('index.html', files=files, breads=breads, path=path)
 
 @app.route('/add/', methods=['POST'])
 def add():
     if request.files['file']:
         file_obj = request.files['file']
-        instance = File.get_or_create(filename=secure_filename(file_obj.filename))
+        instance = File.get_or_create(parent = session['folder'], filename = secure_filename(file_obj.filename))
         try: 
             upload_handler(instance, file_obj)
         except:
@@ -79,8 +97,17 @@ def add():
         else:
             instance.save()
     else:
-        flash("You did not choose a file! Try again")
-    return redirect(url_for('index'))
+        flash("You did not choose a file! Try again.")
+    return redirect(url_for('index')+'?folder=%s'%session['folder'])
+
+@app.route('/mkdir/', methods=['POST'])
+def mkdir():
+    if request.form.get('directory'):
+        instance = File(parent=session['folder'],folder=True,filename = secure_filename(request.form.get('directory')))
+        instance.save()
+    else:
+        flash("You did not provide a directory name! Try again.")
+    return redirect(url_for('index')+'?folder=%s'%session['folder'])
 
 @app.route('/download/<int:file_id>/', methods=['GET', 'POST'])
 def download(file_id):
@@ -91,7 +118,7 @@ def download(file_id):
 
     # fetch the encrypted file contents from S3 and store in a memory
     bucket = get_bucket(app.config['AWSID'], app.config['AWSKEY'], app.config['AWSBUCKET'])
-    key_obj = bucket.get_key(file.filename)
+    key_obj = bucket.get_key(os.path.join(file.parent,file.filename))
 
     # read the contents of the key into an in-memory file
     enc_buffer = StringIO()
@@ -131,14 +158,24 @@ def delete(file_id):
     except File.DoesNotExist:
         abort(404)
     bucket = get_bucket(app.config['AWSID'], app.config['AWSKEY'], app.config['AWSBUCKET'])
-    key_obj = bucket.get_key(file.filename)
+    key_obj = bucket.get_key(os.path.join(file.parent,file.filename))
     if key_obj:
         try:
             key_obj.delete()
         except:
             flash("There was an error deleting your file from S3!")
     file.delete_instance()
-    return redirect(url_for('index'))
+    return redirect(url_for('index')+'?folder=%s'%session['folder'])
+
+@app.route('/search/')
+def search():
+    if request.args.get('q',None):
+        files = File.filter(filename__icontains=request.args.get('q')).order_by((File,'folder','DESC'),(File,'filename'))
+        if files.count() == 0:
+            files=None
+        return render_template('search_results.html', files=files)
+    else:
+        return redirect(url_for('index')+'?folder=%s'%session['folder'])
 
 if __name__ == '__main__':
     app.run()

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Search results</h3>
+{% if files %}
+<table class="table table-striped">
+<thead><th style="width:12px;">&nbsp;</th><th>Name</th><th>Encrypted</th><th>Path</th></thead>
+<tbody>
+{% for file in files %}
+    {% if file.folder %}
+    <tr><td><i class="icon-folder-close"></i></td><td><a href="/?folder={{file.parent}}">{{file.filename}}</a></td><td>&nbsp;</td><td>{{file.parent}}</td></tr>
+    {% else %}
+    <tr><td>&nbsp;</td><td><a href="/?folder={{file.parent}}">{{file.filename}}</a></td><td id="encrypted">{{file.encrypted}}</td><td>{{file.parent}}</td></tr>
+    {% endif %}
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+    <br />
+    <div class="alert">Your query had no results!</div>
+{% endif %}
+{% endblock %}
+
