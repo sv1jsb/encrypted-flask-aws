@@ -14,7 +14,16 @@ For first time run you can create the database by starting a python shell at the
     >>> from app import create_tables
     >>> create_tables()
 
-I have made a few corrections from the article. I also don't make the files public and use boto to download them. Added also the [bootstrap](http://twitter.github.com/bootstrap/index.html) css and javascript.
+I have made a few additions to the article.
+
+* Files can be deleted.
+* Files with the same name are updated.
+* Folder creation and deletion.
+* Search for files or folders.
+* All files/folders are private.
+
+
+Added also the [bootstrap](http://twitter.github.com/bootstrap/index.html) css and javascript.
 
 Have fun!
 
