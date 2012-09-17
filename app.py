@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 
 from flask import Flask, redirect, render_template, send_file, url_for, request, flash, session, abort
-from werkzeug import secure_filename
+from werkzeug.utils import secure_filename
 from beefish import decrypt, encrypt
 import boto
 from StringIO import StringIO
@@ -11,9 +11,10 @@ import mimetypes
 import datetime
 import os.path
 
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 DEBUG = True
 SECRET_KEY = "kas45hdas67dhkasd8aksd78ad7"
-DATABASE = 'db.db'
+DATABASE = os.path.join(PROJECT_ROOT,'db.db')
 
 AWSID = '<your AWS key id>'
 AWSKEY = '<your AWS key secret>'
