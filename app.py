@@ -166,11 +166,7 @@ def delete(file_id):
         except:
             flash("There was an error deleting your file from S3!")
     if file.folder:        # S3 deletes all folder content, so we do the same.
-        if file.parent == '/':
-            parent = file.parent+file.filename
-        else:
-            parent = file.parent+'/'+file.filename
-        dq = File.delete().where(parent__istartswith=parent)
+        dq = File.delete().where(parent__istartswith=os.path.join(file.parent,file.filename))
         dq.execute()
     file.delete_instance()
     return redirect(url_for('index')+'?folder=%s'%session['folder'])
